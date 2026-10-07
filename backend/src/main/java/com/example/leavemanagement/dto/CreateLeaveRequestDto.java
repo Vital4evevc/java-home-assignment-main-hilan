@@ -11,6 +11,9 @@ public class CreateLeaveRequestDto {
     private LocalDate startDate;
     private LocalDate endDate;
 
+    // tests fail without empty constructor, because we create empty dto, than fill it.
+    public CreateLeaveRequestDto() {}
+
     public Long getEmployeeId() { return employeeId; }
     public void setEmployeeId(Long employeeId) { this.employeeId = employeeId; }
 

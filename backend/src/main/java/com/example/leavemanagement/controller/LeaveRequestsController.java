@@ -66,30 +66,31 @@ public class LeaveRequestsController {
             return ResponseEntity.status(404).body("Employee not found");
         }
 
-        int days = (int) ChronoUnit.DAYS.between(dto.getStartDate(), dto.getEndDate()) + 1;
+        int requestedDays = (int) ChronoUnit.DAYS.between(dto.getStartDate(), dto.getEndDate()) + 1;
 
         // How many vacation days has the employee already used this year?
-        int used = leaveRequestRepository
+        int usedDays = leaveRequestRepository
                 .findByEmployeeIdAndTypeAndStatus(dto.getEmployeeId(), LeaveType.VACATION, LeaveStatus.APPROVED)
                 .stream()
                 .mapToInt(LeaveRequest::getDays)
                 .sum();
 
         // Make sure the request does not exceed the quota.
-        if (dto.getType() == LeaveType.VACATION && days > employee.getAnnualQuota()) {
+        int sumUsedDays = requestedDays + usedDays;
+        if (dto.getType() == LeaveType.VACATION && sumUsedDays > employee.getAnnualQuota()) {
             return ResponseEntity.badRequest().body("Not enough vacation balance");
         }
 
-        LeaveRequest request = new LeaveRequest();
-        request.setEmployeeId(dto.getEmployeeId());
-        request.setType(dto.getType());
-        request.setStartDate(dto.getStartDate());
-        request.setEndDate(dto.getEndDate());
-        request.setDays(days);
-        request.setStatus(LeaveStatus.PENDING);
+        LeaveRequest leaveRequest = new LeaveRequest();
+        leaveRequest.setEmployeeId(dto.getEmployeeId());
+        leaveRequest.setType(dto.getType());
+        leaveRequest.setStartDate(dto.getStartDate());
+        leaveRequest.setEndDate(dto.getEndDate());
+        leaveRequest.setDays(requestedDays);
+        leaveRequest.setStatus(LeaveStatus.PENDING);
 
-        leaveRequestRepository.save(request);
+        leaveRequestRepository.save(leaveRequest);
 
-        return ResponseEntity.ok(request);
+        return ResponseEntity.ok(leaveRequest);
     }
 }

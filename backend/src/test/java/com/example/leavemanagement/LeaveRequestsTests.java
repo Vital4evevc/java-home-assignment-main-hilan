@@ -2,14 +2,14 @@ package com.example.leavemanagement;
 
 import com.example.leavemanagement.controller.LeaveRequestsController;
 import com.example.leavemanagement.dto.CreateLeaveRequestDto;
-import com.example.leavemanagement.model.Employee;
-import com.example.leavemanagement.model.LeaveType;
+import com.example.leavemanagement.model.*;
 import com.example.leavemanagement.repository.EmployeeRepository;
 import com.example.leavemanagement.repository.LeaveRequestRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -69,7 +69,33 @@ class LeaveRequestsTests {
         assertEquals(before + 1, leaveRequests.count());
     }
 
-    // TODO (candidate): add a test that proves the balance bug is fixed —
-    // an employee who has already used most of the quota should NOT be able
-    // to create a request that pushes them over the annual quota.
+    @Test
+    void create_ExceedsQuota_Fails() {
+        // Arrange
+        Employee emp = new Employee();
+        emp.setName("Test Emp");
+        emp.setAnnualQuota(20);
+        employees.save(emp);
+        
+        LeaveRequest leaveRequest = new LeaveRequest();
+        leaveRequest.setEmployeeId(emp.getId());
+        leaveRequest.setType(LeaveType.VACATION);
+        leaveRequest.setStartDate(LocalDate.of(2026, 1, 1));
+        leaveRequest.setEndDate(LocalDate.of(2026, 1, 10));
+        leaveRequest.setDays(10);
+        leaveRequest.setStatus(LeaveStatus.APPROVED);
+        leaveRequests.save(leaveRequest);
+
+        CreateLeaveRequestDto dto = new CreateLeaveRequestDto();
+        dto.setEmployeeId(emp.getId());
+        dto.setType(LeaveType.VACATION);
+        dto.setStartDate(LocalDate.of(2026, 3, 1));
+        dto.setEndDate(LocalDate.of(2026, 3, 13));
+
+        // Act
+        ResponseEntity<?> result = controller.create(dto); // 13 days, would exceed the quota of 20
+
+        // Assert
+        assertTrue(result.getStatusCode() == HttpStatus.BAD_REQUEST);
+    }
 }
