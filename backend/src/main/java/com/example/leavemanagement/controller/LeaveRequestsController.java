@@ -13,7 +13,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.temporal.ChronoUnit;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 // NOTE: This controller was written quickly for a POC.
 // It does data access, business logic and validation all in one place.
@@ -23,12 +25,13 @@ public class LeaveRequestsController {
 
     private final EmployeeRepository employeeRepository;
     private final LeaveRequestRepository leaveRequestRepository;
+    private final Set<LeaveRequest> leaveRequestsInProcess = new HashSet<>();
 
     @PersistenceContext
     private EntityManager entityManager;
 
     public LeaveRequestsController(EmployeeRepository employeeRepository,
-                                   LeaveRequestRepository leaveRequestRepository) {
+            LeaveRequestRepository leaveRequestRepository) {
         this.employeeRepository = employeeRepository;
         this.leaveRequestRepository = leaveRequestRepository;
     }
@@ -90,6 +93,52 @@ public class LeaveRequestsController {
         leaveRequest.setStatus(LeaveStatus.PENDING);
 
         leaveRequestRepository.save(leaveRequest);
+
+        return ResponseEntity.ok(leaveRequest);
+    }
+
+    // POST /api/leave-requests/{id}/approve
+    @PostMapping("/{id}/approve")
+    public ResponseEntity<?> approve(@PathVariable Long id) {
+        LeaveRequest leaveRequest = leaveRequestRepository.findById(id).orElse(null);
+        if (leaveRequest == null) {
+            return ResponseEntity.status(404).body("Leave request not found");
+        }
+        synchronized (leaveRequest) {
+            if (leaveRequestsInProcess.contains(leaveRequest)) {
+                return ResponseEntity.badRequest().body("Leave request is being processed");
+            } else if (leaveRequest.getStatus() != LeaveStatus.PENDING) {
+                return ResponseEntity.badRequest().body("Leave request is not pending");
+            } else {
+                leaveRequestsInProcess.add(leaveRequest);
+            }
+            leaveRequest.setStatus(LeaveStatus.APPROVED);
+            leaveRequestRepository.save(leaveRequest);
+            leaveRequestsInProcess.remove(leaveRequest);
+        }
+
+        return ResponseEntity.ok(leaveRequest);
+    }
+
+    // POST /api/leave-requests/{id}/reject
+    @PostMapping("/{id}/reject")
+    public ResponseEntity<?> decline(@PathVariable Long id) {
+        LeaveRequest leaveRequest = leaveRequestRepository.findById(id).orElse(null);
+        if (leaveRequest == null) {
+            return ResponseEntity.status(404).body("Leave request not found");
+        }
+        synchronized (leaveRequest) {
+            if (leaveRequestsInProcess.contains(leaveRequest)) {
+                return ResponseEntity.badRequest().body("Leave request is being processed");
+            } else if (leaveRequest.getStatus() != LeaveStatus.PENDING) {
+                return ResponseEntity.badRequest().body("Leave request is not pending");
+            } else {
+                leaveRequestsInProcess.add(leaveRequest);
+            }
+            leaveRequest.setStatus(LeaveStatus.REJECTED);
+            leaveRequestRepository.save(leaveRequest);
+            leaveRequestsInProcess.remove(leaveRequest);
+        }
 
         return ResponseEntity.ok(leaveRequest);
     }

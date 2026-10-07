@@ -17,6 +17,12 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.LocalDate;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -97,5 +103,55 @@ class LeaveRequestsTests {
 
         // Assert
         assertTrue(result.getStatusCode() == HttpStatus.BAD_REQUEST);
+    }
+
+    // Test to simulate two concurrent approval requests for the same leave request.
+    @Test
+    void approve_SimultaneousRequests_OnlyOneSucceeds() throws Exception {
+        Employee emp = new Employee();
+        emp.setName("Test Emp");
+        emp.setAnnualQuota(20);
+        employees.save(emp);
+
+        CreateLeaveRequestDto dto = new CreateLeaveRequestDto();
+        dto.setEmployeeId(emp.getId());
+        dto.setType(LeaveType.VACATION);
+        dto.setStartDate(LocalDate.of(2026, 4, 1));
+        dto.setEndDate(LocalDate.of(2026, 4, 3));
+
+        ResponseEntity<?> createResult = controller.create(dto);
+        assertTrue(createResult.getStatusCode().is2xxSuccessful());
+        LeaveRequest createdRequest = (LeaveRequest) createResult.getBody();
+        assertNotNull(createdRequest);
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        CountDownLatch ready = new CountDownLatch(2);
+        CountDownLatch start = new CountDownLatch(1);
+        Callable<ResponseEntity<?>> approveConcurrently = () -> {
+            ready.countDown();
+            start.await();
+            return controller.approve(createdRequest.getId());
+        };
+
+        try {
+            Future<ResponseEntity<?>> firstApproval = executor.submit(approveConcurrently);
+            Future<ResponseEntity<?>> secondApproval = executor.submit(approveConcurrently);
+
+            assertTrue(ready.await(5, TimeUnit.SECONDS), "Both approval calls should be ready");
+            start.countDown();
+
+            ResponseEntity<?> firstResult = firstApproval.get(10, TimeUnit.SECONDS);
+            ResponseEntity<?> secondResult = secondApproval.get(10, TimeUnit.SECONDS);
+
+            assertEquals(1, (int) java.util.stream.Stream.of(firstResult, secondResult)
+                    .filter(result -> result.getStatusCode() == HttpStatus.OK)
+                    .count());
+            assertEquals(1, (int) java.util.stream.Stream.of(firstResult, secondResult)
+                    .filter(result -> result.getStatusCode() == HttpStatus.BAD_REQUEST)
+                    .count());
+        } finally {
+            start.countDown();
+            executor.shutdownNow();
+        }
     }
 }
