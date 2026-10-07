@@ -1,7 +1,8 @@
 package com.example.leavemanagement.controller;
 
 import com.example.leavemanagement.model.Employee;
-import com.example.leavemanagement.repository.EmployeeRepository;
+import com.example.leavemanagement.service.IEmployeeService;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,15 +15,15 @@ import java.util.List;
 @RequestMapping("/api/employees")
 public class EmployeesController {
 
-    private final EmployeeRepository employeeRepository;
+    private final IEmployeeService employeeService;
 
-    public EmployeesController(EmployeeRepository employeeRepository) {
-        this.employeeRepository = employeeRepository;
+    public EmployeesController(IEmployeeService employeeService) {
+        this.employeeService = employeeService;
     }
 
     // GET /api/employees
     @GetMapping
     public ResponseEntity<List<Employee>> getAll() {
-        return ResponseEntity.ok(employeeRepository.findAll());
+        return ResponseEntity.ok(employeeService.getAllEmployees());
     }
 }
