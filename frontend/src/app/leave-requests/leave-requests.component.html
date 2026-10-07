@@ -1,10 +1,12 @@
 <h2>Leave Requests</h2>
 
-<!-- TODO (candidate): add the "new request" form here, with validation. -->
+<app-leave-request-form (submitted)="load()"></app-leave-request-form>
 
 <div *ngIf="loading">Loading...</div>
 
-<table *ngIf="!loading">
+<div class="error" *ngIf="loadError">{{ loadError }} <button (click)="load()">Retry</button></div>
+
+<table *ngIf="!loading && !loadError">
   <thead>
     <tr>
       <th>#</th>

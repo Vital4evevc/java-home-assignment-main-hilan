@@ -28,6 +28,7 @@
         },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
+          "options": { "proxyConfig": "proxy.conf.json" },
           "configurations": {
             "production": { "buildTarget": "leave-management-frontend:build:production" },
             "development": { "buildTarget": "leave-management-frontend:build:development" }

@@ -1,0 +1,70 @@
+form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px;
+  background: #fff;
+  border: 1px solid #d9e2ec;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+h3 {
+  flex-basis: 100%;
+  margin: 0;
+  color: #243b53;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 180px;
+}
+
+label {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+input,
+select {
+  padding: 6px 8px;
+  border: 1px solid #9fb3c8;
+  border-radius: 4px;
+  font: inherit;
+}
+
+input.invalid,
+select.invalid {
+  border-color: #cf1124;
+}
+
+.error {
+  color: #cf1124;
+  font-size: 13px;
+}
+
+button {
+  align-self: flex-start;
+  margin-top: 23px;
+  background: #2680c2;
+  color: #fff;
+  border: none;
+  padding: 7px 16px;
+  border-radius: 4px;
+}
+
+button:hover {
+  background: #186faf;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.submit-error {
+  flex-basis: 100%;
+  font-size: 14px;
+}

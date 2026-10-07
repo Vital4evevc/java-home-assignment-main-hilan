@@ -1,0 +1,66 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+  <h3>New Request</h3>
+
+  <div class="field">
+    <label for="employeeId">Employee</label>
+    <select id="employeeId" formControlName="employeeId" [class.invalid]="showError(employeeId)">
+      <option [ngValue]="null" disabled>
+        {{ employeesLoading ? 'Loading employees...' : 'Select an employee' }}
+      </option>
+      <option *ngFor="let e of employees" [ngValue]="e.id">{{ e.name }}</option>
+    </select>
+    <div class="error" *ngIf="employeesError">
+      {{ employeesError }} <a href="" (click)="loadEmployees(); $event.preventDefault()">Retry</a>
+    </div>
+    <div class="error" *ngIf="!employeesError && showError(employeeId) && employeeId.hasError('required')">
+      Please select an employee.
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="startDate">Start date</label>
+    <input
+      id="startDate"
+      type="date"
+      formControlName="startDate"
+      [class.invalid]="showError(startDate) || showDateRangeError"
+    />
+    <div class="error" *ngIf="showError(startDate) && startDate.hasError('required')">
+      Start date is required.
+    </div>
+    <div class="error" *ngIf="showDateRangeError">
+      Start date can't be after the end date.
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="endDate">End date</label>
+    <input
+      id="endDate"
+      type="date"
+      formControlName="endDate"
+      [class.invalid]="showError(endDate) || showDateRangeError"
+    />
+    <div class="error" *ngIf="showError(endDate) && endDate.hasError('required')">
+      End date is required.
+    </div>
+    <div class="error" *ngIf="showDateRangeError">
+      End date can't be before the start date.
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="type">Vacation type</label>
+    <select id="type" formControlName="type" [class.invalid]="showError(type)">
+      <option [ngValue]="null" disabled>Select a type</option>
+      <option *ngFor="let t of vacationTypes" [ngValue]="t.value">{{ t.label }}</option>
+    </select>
+    <div class="error" *ngIf="showError(type) && type.hasError('required')">
+      Please select a vacation type.
+    </div>
+  </div>
+
+  <button type="submit" [disabled]="submitting">{{ submitting ? 'Submitting...' : 'Submit' }}</button>
+
+  <div class="error submit-error" *ngIf="submitError" role="alert">{{ submitError }}</div>
+</form>

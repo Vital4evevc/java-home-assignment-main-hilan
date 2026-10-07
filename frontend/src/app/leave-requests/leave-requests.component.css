@@ -9,3 +9,8 @@ button {
 button:hover {
   background: #186faf;
 }
+
+.error {
+  color: #cf1124;
+  margin-bottom: 12px;
+}
